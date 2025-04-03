@@ -373,41 +373,6 @@ Better way: Use ```--store-failures```
 * **Caveat**: A test's result will always replace previous failures for the same test.
 * **Save all failures**
 
-### 2.7 Testing Packages
-
-#### 2.7.1 dbt_utils
-`dbt_utils` is a one-stop-shop for several key functions and tests that you’ll use every day in your project.
-
-**Here are some useful tests in `dbt_utils`:**
-- `expression_is_true`
-- `cardinality_equality`
-- `unique_where`
-- `not_null_where`
-- `not_null_proportion`
-- `unique_combination_of_columns`
-
-#### 2.7.2 dbt_expectations
-`dbt_expectations` contains a large number of tests that you may not find native to dbt or `dbt_utils`. If you are familiar with Python’s `great_expectations`, this package might be for you!
-
-**Here are some useful tests in `dbt_expectations`:**
-- `expect_column_values_to_be_between`
-- `expect_row_values_to_have_data_for_every_n_datepart`
-- `expect_column_values_to_be_within_n_moving_stdevs`
-- `expect_column_median_to_be_between`
-- `expect_column_values_to_match_regex_list`
-- `expect_column_values_to_be_increasing`
-
-#### 2.7.3 audit_helper
-This package is utilized when you are making significant changes to your models, and you want to be sure the updates do not change the resulting data. The audit helper functions will only be run in the IDE, rather than a test performed in deployment.
-
-**Here are some useful tools in `audit_helper`:**
-- `compare_relations`
-- `compare_queries`
-- `compare_column_values`
-- `compare_relation_columns`
-- `compare_all_columns`
-- `compare_column_values_verbose`
-
 ## 3. Custom Tests
 
 ### 3.1 Singular Test
@@ -468,3 +433,185 @@ and {{ column_id }} is not in ('00000')
 
 {% endtest %}
 ```
+
+## 4. Tests in Packages
+How do install a package
+1. Import the package you want into your packages.yml file
+2. Run ```dbt deps``` to install
+3. Add the test to your ```model.yml``` file
+
+Certainly! Here's a consolidated overview of three essential dbt packages—**dbt_utils**, **dbt_expectations**, and **audit_helper**—highlighting their functionalities and key macros/tests:
+
+### 4.1 dbt_utils
+
+The `dbt_utils` package offers a suite of macros that extend dbt's capabilities by providing reusable utility functions for common data modeling patterns. citeturn0search0
+
+**Key Tests:**
+
+- **unique**: Ensures that each value in a specified column is distinct.
+
+  *Example Usage:*
+  ```yaml
+  tests:
+    - dbt_utils.unique:
+        column_name: customer_id
+  ```
+  
+This test verifies that the `customer_id` column contains only unique values.
+
+- **not_null**: Checks that a specified column does not contain null values.
+
+  *Example Usage:*
+  ```yaml
+  tests:
+    - dbt_utils.not_null:
+        column_name: order_id
+  ```
+  
+This test confirms that the `order_id` column has no null entries.
+
+- **relationships**: Validates the referential integrity between two tables by ensuring that values in a column have corresponding entries in a related table.
+
+  *Example Usage:*
+  ```yaml
+  tests:
+    - dbt_utils.relationships:
+        from: ref('stg_orders')
+        field: customer_id
+        to: ref('stg_customers')
+  ```
+  
+This ensures that every `customer_id` in the `stg_orders` table exists in the `stg_customers` table.
+
+**Additional Useful Tests in `dbt_utils`:**
+
+- `expression_is_true`
+- `cardinality_equality`
+- `unique_where`
+- `not_null_where`
+- `not_null_proportion`
+- `unique_combination_of_columns`
+
+### 4.2 dbt_expectations
+
+Inspired by the Great Expectations library, the `dbt_expectations` package brings expressive and comprehensive data validation tests to dbt. citeturn0search1
+
+**Key Tests:**
+
+- **expect_column_values_to_be_between**: Checks if the values in a column fall within a specified range.
+
+  *Example Usage:*
+  ```yaml
+  tests:
+    - dbt_expectations.expect_column_values_to_be_between:
+        column: amount
+        min_value: 0
+        max_value: 1000
+        row_condition: "order_id is not null"
+        strictly: true
+  ```
+  
+This test ensures that the `amount` column values are strictly between 0 and 1000 for rows where `order_id` is not null.
+
+- **expect_column_mean_to_be_between**: Verifies that the mean of a column falls within a specified range.
+
+  *Example Usage:*
+  ```yaml
+  tests:
+    - dbt_expectations.expect_column_mean_to_be_between:
+        column: amount
+        min_value: 1
+        max_value: 500
+        group_by: [customer_id]
+        row_condition: "order_id is not null"
+        strictly: false
+  ```
+  
+This ensures that the average `amount` per `customer_id` is between 1 and 500, inclusively, for rows where `order_id` is not null.
+
+**Additional Useful Tests in `dbt_expectations`:**
+
+- `expect_row_values_to_have_data_for_every_n_datepart`
+- `expect_column_values_to_be_within_n_moving_stdevs`
+- `expect_column_median_to_be_between`
+- `expect_column_values_to_match_regex_list`
+- `expect_column_values_to_be_increasing`
+
+### 4.3 audit_helper
+
+The `audit_helper` package provides macros to facilitate auditing and comparing data between tables, aiding in tasks like data migration verification. citeturn0search5
+
+**Key Macros:**
+
+- **compare_relations**: Generates a row-by-row comparison between two tables, highlighting any differences.
+
+  *Example Usage:*
+  ```yaml
+  macros:
+    - audit_helper.compare_relations:
+        a_relation: ref('fct_orders')
+        b_relation: ref('fct_orders_archive')
+        primary_key: order_id
+  ```
+  
+This macro compares the `fct_orders` table with its archived version to identify discrepancies.
+
+- **compare_column_values**: Compares the values of a specific column across two tables to identify mismatches.
+
+  *Example Usage:*
+  ```yaml
+  macros:
+    - audit_helper.compare_column_values:
+        a_relation: ref('stg_orders')
+        a_column: customer_id
+        b_relation: ref('stg_customers')
+        b_column: customer_id
+  ```
+  
+This macro checks for differences in the `customer_id` values between the `stg_orders` and `stg_customers` tables.
+
+**Additional Useful Tools in `audit_helper`:**
+
+- `compare_queries`
+- `compare_relation_columns`
+- `compare_all_columns`
+- `compare_column_values_verbose`
+
+By integrating these packages and their respective tests/macros into your dbt project, you can significantly enhance data validation, ensure data integrity, and streamline the auditing process. 
+
+## 5. Test Configurations
+- **Severity:** Allows you to toggle between `warn` and `error` when a test doesn't meet your assertions.
+- **warn_if** and **error_if:** Allow you to set thresholds for warnings or errors for a specific test.
+
+```yml
+- name: fct_orders
+  description: Complete orders model including the amount associated with each order.
+  tests:
+  - dbt_utils.expression_is_true:
+      expression: "amount >= 0"
+  columns:
+  - name: order_id
+    description: Primary key for orders
+    tests:
+    - unique
+    - not_null
+    # This test will fail
+    - assert_column_greater_than_five:
+        config:
+          severity: warn
+          error_if: ">30"
+          warn_if: ">10"
+```
+
+- **Where:** Allows you to filter down to a subset of rows that you want to test.
+- **Limit:** Allows you to limit the number of returned failing records.
+- **store_failures:** Enables storing of the failing records in your data platform.
+- **Schema:** Specifies where you want to store the failing records if you enable `store_failures`.
+
+
+
+
+Where to place test
+- **YAML Configurations:** Where generic tests are applied.
+- **Config Blocks:** Located at the top of singular tests to apply specific configurations.
+- **dbt_project.yml:** Used to apply configurations to tests across your entire project in one place.

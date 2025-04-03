@@ -32,7 +32,16 @@ models:
     - unique
     - not_null
     # This test will fail
-    - assert_column_greater_than_fivem
+    - assert_column_greater_than_five:
+        config:
+          severity: warn
+          error_if: ">30"
+          warn_if: ">10"
+          where: "order_date > '2019-01-01'"
+          limit: 10
+          store_failures: true
+          schema: test_failure
+
   - name: amount
     description: Dollars spent per order
     tests:
@@ -49,15 +58,15 @@ models:
         group_by: [ customer_id ]
         row_condition: "order_id is not null" # (Optional)
         strictly: false
-
   - name: customer_id
     tests:
     - relationships:
         to: ref('stg_jaffle_shop__customers')
         field: customer_id
     # this test should fail, use `dbt test -s orders --store-failures` to find results
-    # - unique
-
+    - unique:
+        config:
+          severity: warn
     # - name: orders_by_date
     #   description: periodic snapshot showing orders and dollars placed on each day
     #   columns:
